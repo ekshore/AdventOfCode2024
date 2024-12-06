@@ -189,7 +189,7 @@ fn read_file(file_path: String) -> Vec<u8> {
 }
 
 #[cfg(test)]
-mod test {
+mod day_two {
     use super::{is_report_safe, ReportData};
 
     #[test]

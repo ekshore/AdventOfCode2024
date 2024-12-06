@@ -59,7 +59,7 @@ fn load_file(file_path: String) -> (Vec<i32>, Vec<i32>) {
 }
 
 #[cfg(test)]
-mod test {
+mod day_one {
     use crate::find_similaritiy_score;
 
     #[test]
