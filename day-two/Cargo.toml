@@ -1,0 +1,3 @@
+[package]
+name = "day-two"
+edition = "2021"

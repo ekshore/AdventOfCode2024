@@ -2,13 +2,13 @@
 resolver = "2"
 
 members = [
-    "day-one"
+    "day-one",
+    "day-two"
 ]
 
 [workspace.package]
-name = "adventOfCode-2024"
-version = "0.1.0"
 edition = "2021"
+version = "0.1.0"
 authors = ["Caleb Ekstrand <ekstrand.caleb@ekshore.net>"]
 
 [workspace.dependencies]
