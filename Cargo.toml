@@ -3,7 +3,8 @@ resolver = "2"
 
 members = [
     "day-one",
-    "day-two"
+    "day-two",
+    "day-three",
 ]
 
 [workspace.package]
