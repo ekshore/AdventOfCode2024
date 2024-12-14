@@ -2,14 +2,16 @@ fn main() {
     println!("Merry Christmas");
 }
 
-struct Map {
+type Cords = (usize, usize);
+
+struct Guard {
     pub data: Box<[u8]>,
     pub data_width: usize,
     pub data_height: usize,
     actual_width: usize,
 }
 
-impl Map {
+impl Guard {
     pub fn parse_data(raw_data: Vec<u8>) -> Self {
         let data_width = raw_data
             .iter()
@@ -34,24 +36,36 @@ impl Map {
     }
 }
 
+#[inline]
+fn index(cords: Cords, offset_width: usize) -> usize {
+    let (x, y) = cords;
+    y * offset_width + x
+}
+
 #[cfg(test)]
-mod day_four {
+mod day_six {
     use super::*;
 
     #[test]
     fn example_one_data_load() {
-        let word_search = Map::parse_data(example_one_data());
-        assert_eq!(10, word_search.data_width);
-        assert_eq!(10, word_search.data_height);
+        let guard = Guard::parse_data(example_data());
+        assert_eq!(10, guard.data_width);
+        assert_eq!(10, guard.data_height);
     }
 
     #[test]
     fn example_one_data_get_byte_last() {
-        let data = Map::parse_data(example_one_data());
-        assert_eq!(b'.', *data.get_byte(9, 9));
+        let guard = Guard::parse_data(example_data());
+        assert_eq!(b'.', *guard.get_byte(9, 9));
     }
 
-    fn example_one_data() -> Vec<u8>{
+    #[test]
+    fn test_index() {
+        let guard = Guard::parse_data(example_data());
+        assert_eq!(70, index((4, 6), guard.actual_width));
+    }
+
+    fn example_data() -> Vec<u8>{
         b"....#.....
 .........#
 ..........
