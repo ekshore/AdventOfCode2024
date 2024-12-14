@@ -1,0 +1,3 @@
+[package]
+name = "day-six"
+edition.workspace = true
