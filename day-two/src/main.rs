@@ -57,11 +57,11 @@ fn is_report_safe(report: &Vec<usize>) -> bool {
     let mut report = report.iter();
     let mut safe = DamperedBool::new();
     let mut is_accending: Option<bool> = None;
-    let mut last_val = report.next().unwrap().clone();
+    let mut last_val = *report.next().unwrap();
 
     let mut trace_log_str = String::from("");
 
-    while let Some(val) = report.next() {
+    for val in report {
         let diff: isize = (*val as isize) - (last_val as isize);
         if !(-4 < diff && diff < 4 && diff != 0) {
             if !safe.set_false() {
@@ -72,18 +72,15 @@ fn is_report_safe(report: &Vec<usize>) -> bool {
                 if !safe.set_false() {
                     continue;
                 }
-            } else if !accending && 0 < diff {
-                if !safe.set_false() {
-                    continue;
-                }
+            } else if !accending && 0 < diff && !safe.set_false() {
+                continue;
             }
         } else {
             is_accending = Some(*val > last_val);
         }
 
         trace_log_str = format!("{trace_log_str}\nLast Val: {last_val} | Val: {val} | Accending: {is_accending:?} | Diff: {diff} | Safe: {safe:?}");
-        last_val = val.clone();
-
+        last_val = *val;
 
         if !safe.get_val() {
             break;
@@ -159,7 +156,7 @@ impl ReportData {
         buff.into_iter()
             .enumerate()
             .map(|(idx, val)| (val - 48) as usize * (10_usize.pow((idx) as u32)))
-            .reduce(|acc, val| (acc + val) as usize)
+            .reduce(|acc, val| acc + val)
     }
 
     fn read_report(&mut self) -> Option<Vec<usize>> {
@@ -169,15 +166,13 @@ impl ReportData {
             report.push(val);
         }
 
-        if let Some(_) = self.peek() {
+        if self.peek().is_some() {
             let _ = self.read_byte();
             Some(report)
+        } else if report.is_empty() {
+            None
         } else {
-            if report.is_empty() {
-                None
-            } else {
-                Some(report)
-            }
+            Some(report)
         }
     }
 }
