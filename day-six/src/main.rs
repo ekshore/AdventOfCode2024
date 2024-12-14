@@ -9,6 +9,7 @@ struct Guard {
     pub data_width: usize,
     pub data_height: usize,
     actual_width: usize,
+    pub pos: Cords,
 }
 
 impl Guard {
@@ -20,12 +21,20 @@ impl Guard {
             .map_or_else(|| 0, |(idx, _)| idx);
         let actual_width = data_width + 1;
         let data_height = (raw_data.len() + 1) / actual_width;
+
+        let pos_idx = raw_data
+            .iter()
+            .enumerate()
+            .find(|(_, &e)| e == b'^')
+            .map_or_else(|| 0, |(idx, _)| idx);
+        let pos = (pos_idx % actual_width, pos_idx / actual_width);
         let data: Box<[u8]> = raw_data.into();
         Self {
             data,
             data_width,
             data_height,
             actual_width,
+            pos,
         }
     }
 
@@ -62,7 +71,7 @@ mod day_six {
     #[test]
     fn test_index() {
         let guard = Guard::parse_data(example_data());
-        assert_eq!(70, index((4, 6), guard.actual_width));
+        assert_eq!(70, index(guard.pos, guard.actual_width));
     }
 
     fn example_data() -> Vec<u8>{
