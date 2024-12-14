@@ -2,14 +2,14 @@ fn main() {
     println!("Merry Christmas");
 }
 
-struct WordSearch {
+struct Map {
     pub data: Box<[u8]>,
     pub data_width: usize,
     pub data_height: usize,
     actual_width: usize,
 }
 
-impl WordSearch {
+impl Map {
     pub fn parse_data(raw_data: Vec<u8>) -> Self {
         let data_width = raw_data
             .iter()
@@ -40,14 +40,14 @@ mod day_four {
 
     #[test]
     fn example_one_data_load() {
-        let word_search = WordSearch::parse_data(example_one_data());
+        let word_search = Map::parse_data(example_one_data());
         assert_eq!(10, word_search.data_width);
         assert_eq!(10, word_search.data_height);
     }
 
     #[test]
     fn example_one_data_get_byte_last() {
-        let data = WordSearch::parse_data(example_one_data());
+        let data = Map::parse_data(example_one_data());
         assert_eq!(b'.', *data.get_byte(9, 9));
     }
 
