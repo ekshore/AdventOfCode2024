@@ -1,3 +1,4 @@
+use std::collections::hash_set::HashSet;
 fn main() {
     println!("Merry Christmas");
 }
@@ -159,6 +160,17 @@ mod day_six {
         let next = guard.next();
         assert!(next.is_some());
         assert_eq!(30, next.expect("Previously Asserted"));
+    }
+
+    #[test]
+    fn test_walk_path() {
+        let mut guard = Guard::parse_data(example_data());
+        let mut locations: HashSet<usize> = HashSet::new();
+
+        while let Some(location) = guard.next() {
+            let _ = locations.insert(location);
+        }
+        assert_eq!(41, locations.len());
     }
 
     fn example_data() -> Vec<u8> {
