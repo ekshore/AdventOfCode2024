@@ -4,12 +4,14 @@ fn main() {
     println!("Merry Christmas");
 }
 
+#[allow(dead_code)]
 struct DataParser {
     data: Box<[u8]>,
     pub cursor: usize,
     data_len: usize,
 }
 
+#[allow(dead_code)]
 impl DataParser {
     pub fn new(data: Vec<u8>) -> Self {
         Self {
@@ -56,6 +58,7 @@ impl DataParser {
     }
 }
 
+#[allow(dead_code)]
 fn read_file(file_path: String) -> Vec<u8> {
     let file_path = Path::new(&file_path);
     let data: Vec<u8> = fs::read(file_path).unwrap();
