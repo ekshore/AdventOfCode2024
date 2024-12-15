@@ -1,13 +1,43 @@
 use std::collections::hash_set::HashSet;
+use std::collections::HashMap;
+use std::fs;
+use std::path::Path;
+
 fn main() {
+    let data = read_file(String::from("./day-six/input/data.txt"));
+    let mut guard = Guard::parse_data(data);
+
+    let mut locations: HashSet<usize> = HashSet::new();
+    while let Some(location) = guard.next_step() {
+        let _ = locations.insert(location);
+    }
+
+    let location_count = locations.len();
+    println!("The guards patrol path has {location_count} unique locations");
+    println!(
+        "There are {0:?} locations where a new obstruction would cause a loop",
+        guard.loop_locations.len()
+    );
     println!("Merry Christmas");
 }
 
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 enum Direction {
     Up,
     Right,
     Down,
     Left,
+}
+
+impl Direction {
+    pub fn turn_right(&self) -> Self {
+        match self {
+            Self::Up => Self::Right,
+            Self::Right => Self::Down,
+            Self::Down => Self::Left,
+            Self::Left => Self::Up,
+        }
+    }
 }
 
 type Cords = (usize, usize);
@@ -19,6 +49,8 @@ struct Guard {
     actual_width: usize,
     pub pos: Cords,
     pub dir: Direction,
+    pub patrol_path: HashMap<usize, Direction>,
+    pub loop_locations: Vec<Cords>,
 }
 
 impl Guard {
@@ -39,6 +71,9 @@ impl Guard {
         let pos = (pos_idx % actual_width, pos_idx / actual_width);
 
         let data: Box<[u8]> = raw_data.into();
+
+        let mut patrol_path = HashMap::new();
+        patrol_path.insert(index(pos, actual_width), Direction::Up);
         Self {
             data,
             data_width,
@@ -46,6 +81,8 @@ impl Guard {
             actual_width,
             dir: Direction::Up,
             pos,
+            patrol_path,
+            loop_locations: Vec::new(),
         }
     }
 
@@ -56,17 +93,12 @@ impl Guard {
     }
 
     pub fn turn(&mut self) {
-        self.dir = match self.dir {
-            Direction::Up => Direction::Right,
-            Direction::Right => Direction::Down,
-            Direction::Down => Direction::Left,
-            Direction::Left => Direction::Up,
-        }
+        self.dir = self.dir.turn_right();
     }
 
-    pub fn next(&mut self) -> Option<usize> {
-        let (x, y) = self.pos;
-        let next = match self.dir {
+    pub fn next(&self, dir: &Direction, pos: Cords) -> Option<Cords> {
+        let (x, y) = pos;
+        match dir {
             Direction::Up => {
                 if y == 0 {
                     None
@@ -95,14 +127,28 @@ impl Guard {
                     Some((x - 1, y))
                 }
             }
-        };
+        }
+    }
 
+    pub fn next_step(&mut self) -> Option<usize> {
+        let next = self.next(&self.dir, self.pos);
         if let Some(next) = next {
             let next_pos = self.get_position(next);
-            if !(b'.' == *next_pos || b'^' == *next_pos) {
+            if is_obstructed(next_pos) {
                 self.turn();
-                self.next()
+                self.next_step()
             } else {
+                //println!("{0:?}", self.patrol_path);
+                if b'^' != *next_pos
+                    && self
+                        .patrol_path
+                        .contains_key(&index(next, self.actual_width))
+                    && self.check_loop(self.dir.turn_right(), self.pos)
+                {
+                    self.loop_locations.push(next);
+                }
+                self.patrol_path
+                    .insert(index(next, self.actual_width), self.dir.clone());
                 self.pos = next;
                 Some(index(next, self.actual_width))
             }
@@ -110,6 +156,39 @@ impl Guard {
             None
         }
     }
+
+    pub fn check_loop(&self, mut dir: Direction, mut pos: Cords) -> bool {
+        let mut loop_path: HashMap<usize, Direction> = self.patrol_path.clone();
+
+        while let Some(next) = self.next(&dir, pos) {
+            let next_pos = self.get_position(next);
+            if is_obstructed(next_pos) {
+                dir = dir.turn_right()
+            } else {
+                if let Some(loop_dir) = loop_path.get(&index(next, self.actual_width)) {
+                    //println!("Crossing paths Postion: {pos:?}, Last dir: {loop_dir:?}, Current dir: {dir:?}");
+                    if *loop_dir == dir {
+                        return true;
+                    }
+                }
+                loop_path.insert(index(next, self.actual_width), dir.clone());
+                pos = next;
+            }
+        }
+        //println!("{loop_path:?}");
+        false
+    }
+}
+
+fn read_file(file_path: String) -> Vec<u8> {
+    let file_path = Path::new(&file_path);
+    let data: Vec<u8> = fs::read(file_path).unwrap();
+    data
+}
+
+#[inline]
+fn is_obstructed(pos_value: &u8) -> bool {
+    !(b'.' == *pos_value || b'^' == *pos_value)
 }
 
 #[inline]
@@ -144,7 +223,7 @@ mod day_six {
     #[test]
     fn test_next() {
         let mut guard = Guard::parse_data(example_data());
-        let next = guard.next();
+        let next = guard.next_step();
         assert!(next.is_some());
         assert_eq!(59, next.expect("Previously Asserted"));
     }
@@ -153,11 +232,11 @@ mod day_six {
     fn test_next_turn() {
         let mut guard = Guard::parse_data(example_data());
         guard.pos = (4, 1);
-        let next = guard.next();
+        let next = guard.next_step();
         assert!(next.is_some());
         assert_eq!(16, next.expect("Previously Asserted"));
         guard.pos = (8, 1);
-        let next = guard.next();
+        let next = guard.next_step();
         assert!(next.is_some());
         assert_eq!(30, next.expect("Previously Asserted"));
     }
@@ -167,14 +246,77 @@ mod day_six {
         let mut guard = Guard::parse_data(example_data());
         let mut locations: HashSet<usize> = HashSet::new();
 
-        while let Some(location) = guard.next() {
+        while let Some(location) = guard.next_step() {
             let _ = locations.insert(location);
         }
         assert_eq!(41, locations.len());
     }
 
+    #[test]
+    fn test_loop_locations() {
+        let mut guard = Guard::parse_data(example_data());
+        let mut locations: HashSet<usize> = HashSet::new();
+
+        while let Some(location) = guard.next_step() {
+            let _ = locations.insert(location);
+        }
+        println!("{0:?}", guard.loop_locations);
+        for location in &guard.loop_locations {
+            guard.data[index(*location, guard.actual_width)] = b'O';
+        }
+        println!("{}", String::from_utf8(guard.data.to_vec()).unwrap());
+
+        assert_eq!(6, guard.loop_locations.len());
+        assert!(guard.loop_locations.contains(&(3, 6)));
+        assert!(guard.loop_locations.contains(&(6, 7)));
+        assert!(guard.loop_locations.contains(&(7, 7)));
+        assert!(guard.loop_locations.contains(&(1, 8)));
+        assert!(guard.loop_locations.contains(&(3, 8)));
+        assert!(guard.loop_locations.contains(&(7, 9)));
+    }
+
+    #[test]
+    fn test_obstructed_loop() {
+        let mut guard = Guard::parse_data(example_data_obstructed_loop());
+        let mut locations: HashSet<usize> = HashSet::new();
+
+        while let Some(location) = guard.next_step() {
+            let _ = locations.insert(location);
+        }
+        println!("{0:?}", guard.loop_locations);
+        for location in &guard.loop_locations {
+            guard.data[index(*location, guard.actual_width)] = b'O';
+        }
+        println!("{}", String::from_utf8(guard.data.to_vec()).unwrap());
+
+        assert_eq!(7, guard.loop_locations.len());
+
+        assert!(guard.loop_locations.contains(&(3, 6)));
+        assert!(guard.loop_locations.contains(&(6, 7)));
+        assert!(guard.loop_locations.contains(&(7, 7)));
+        assert!(guard.loop_locations.contains(&(1, 8)));
+        assert!(guard.loop_locations.contains(&(3, 8)));
+        assert!(guard.loop_locations.contains(&(7, 9)));
+
+        assert!(guard.loop_locations.contains(&(4, 8)));
+    }
+
     fn example_data() -> Vec<u8> {
         b"....#.....
+.........#
+..........
+..#.......
+.......#..
+..........
+.#..^.....
+........#.
+#.........
+......#..."
+            .into()
+    }
+
+    fn example_data_obstructed_loop() -> Vec<u8> {
+        b"....##....
 .........#
 ..........
 ..#.......
