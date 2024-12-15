@@ -2,6 +2,7 @@ fn main() {
     println!("Merry Christmas");
 }
 
+#[allow(dead_code)]
 struct WordSearch {
     pub data: Box<[u8]>,
     pub data_width: usize,
@@ -9,6 +10,7 @@ struct WordSearch {
     actual_width: usize,
 }
 
+#[allow(dead_code)]
 impl WordSearch {
     pub fn parse_data(raw_data: Vec<u8>) -> Self {
         let data_width = raw_data
