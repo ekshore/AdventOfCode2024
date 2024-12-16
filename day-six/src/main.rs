@@ -140,7 +140,7 @@ impl Guard {
             } else {
                 //println!("{0:?}", self.patrol_path);
                 if b'^' != *next_pos
-                    && self
+                    && !self
                         .patrol_path
                         .contains_key(&index(next, self.actual_width))
                     && self.check_loop(self.dir.turn_right(), self.pos)
@@ -301,6 +301,24 @@ mod day_six {
         assert!(guard.loop_locations.contains(&(4, 8)));
     }
 
+    #[test]
+    fn test_reddit_debug_map() {
+        let mut guard = Guard::parse_data(debug_data());
+        let mut locations: HashSet<usize> = HashSet::new();
+
+        while let Some(location) = guard.next_step() {
+            let _ = locations.insert(location);
+        }
+
+        println!("{0:?}", guard.loop_locations);
+        for location in &guard.loop_locations {
+            guard.data[index(*location, guard.actual_width)] = b'O';
+        }
+        println!("{}", String::from_utf8(guard.data.to_vec()).unwrap());
+
+        assert_eq!(15, guard.loop_locations.len());
+    }
+
     fn example_data() -> Vec<u8> {
         b"....#.....
 .........#
@@ -326,6 +344,22 @@ mod day_six {
 ........#.
 #.........
 ......#..."
+            .into()
+    }
+
+    fn debug_data() -> Vec<u8> {
+        b"...........#.....#......
+...................#....
+...#.....##.............
+......................#.
+..................#.....
+..#.....................
+....................#...
+........................
+.#........^.............
+..........#..........#..
+..#.....#..........#....
+........#.....#..#......"
             .into()
     }
 }
